@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  discovery-service:
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - ecommerce-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  users-service:
+    build:
+      context: ./users-service
+      dockerfile: Dockerfile
+    container_name: users-service
+    ports:
+      - "8081:8081"
+    networks:
+      - ecommerce-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_URI=http://discovery-service:8761/eureka/
+      - HOSTNAME=users-service
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+    restart: on-failure
+
+  orders-service:
+    build:
+      context: ./orders-service
+      dockerfile: Dockerfile
+    container_name: orders-service
+    ports:
+      - "8082:8082"
+    networks:
+      - ecommerce-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_URI=http://discovery-service:8761/eureka/
+      - HOSTNAME=orders-service
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      users-service:
+        condition: service_started
+    restart: on-failure
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    networks:
+      - ecommerce-network
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_URI=http://discovery-service:8761/eureka/
+      - HOSTNAME=api-gateway
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      users-service:
+        condition: service_started
+      orders-service:
+        condition: service_started
+    restart: on-failure
+
+networks:
+  ecommerce-network:
+    driver: bridge

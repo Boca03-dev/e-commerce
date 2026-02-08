@@ -49,6 +49,41 @@ Projekat se sastoji od sledećih servisa:
 - Maven 3.6+
 - IntelliJ IDEA (ili bilo koji drugi IDE)
 
+## 🐳 Docker Compose - Pokreni ceo sistem sa jednom komandom!
+
+### Preduslovi
+- Docker instaliran
+- Docker Compose instaliran
+
+### Pokreni sve servise u Docker-u:
+
+```bash
+# Build svih image-a (prvi put)
+docker-compose build
+
+# Pokreni sve servise
+docker-compose up
+
+# Ili u pozadini (detached mode)
+docker-compose up -d
+```
+
+**Provera:**
+```bash
+docker-compose ps
+```
+
+**Pristup servisima:**
+- Eureka: http://localhost:8761
+- API Gateway: http://localhost:8080
+- Users API: http://localhost:8080/api/users
+- Orders API: http://localhost:8080/api/orders
+
+**Zaustavi sve:**
+```bash
+docker-compose down
+```
+
 ### Korak po korak (VAŽAN REDOSLED!)
 
 #### 1. Discovery Service (Eureka Server)
@@ -92,6 +127,8 @@ mvn spring-boot:run
 Gateway: http://localhost:8080
 
 **Provera:** Sva 3 servisa (users, orders, gateway) treba da budu vidljiva na Eureka Dashboard-u (http://localhost:8761).
+
+
 
 ## 🎯 Ključne Funkcionalnosti
 

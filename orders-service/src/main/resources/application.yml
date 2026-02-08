@@ -12,8 +12,8 @@ spring:
     password: 
 
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
     defer-datasource-initialization: true
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
     show-sql: true
@@ -34,11 +34,12 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
     register-with-eureka: true
     fetch-registry: true
   instance:
-    prefer-ip-address: true
+    prefer-ip-address: false
+    hostname: ${HOSTNAME:orders-service}
     instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
 
 resilience4j:
