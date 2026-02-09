@@ -29,8 +29,6 @@ public class OrderNotificationListener {
 
         logger.info("✅ Sve notifikacije poslate uspešno!");
     }
-cija slanja email notifikacije
-     */
     private void sendEmailNotification(OrderCreatedEvent event) {
         logger.info("📧 Email poslat korisniku {} o porudžbini #{}", 
                    event.getUserId(), event.getOrderId());
