@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Real-Time Notifications 📡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .status {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .dashboard {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .number {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .notifications-header h2 {
+            color: #333;
+        }
+
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .clear-btn:hover {
+            background: #dc2626;
+        }
+
+        .notifications {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .notification {
+            background: #f3f4f6;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .notification.new {
+            background: #dbeafe;
+            border-left-color: #3b82f6;
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .notification-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #1f2937;
+        }
+
+        .notification-time {
+            font-size: 0.85em;
+            color: #6b7280;
+        }
+
+        .notification-message {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .notification-details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #d1d5db;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .detail {
+            color: #6b7280;
+        }
+
+        .detail strong {
+            color: #1f2937;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📡 E-commerce Real-Time Dashboard</h1>
+            <div id="connectionStatus" class="status disconnected">
+                🔴 Disconnected
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="stats">
+                <div class="stat-card">
+                    <h3>Total Notifications</h3>
+                    <div class="number" id="totalCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Orders Created</h3>
+                    <div class="number" id="orderCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Latest Order Amount</h3>
+                    <div class="number" id="latestAmount">$0</div>
+                </div>
+            </div>
+
+            <div class="notifications-header">
+                <h2>📬 Live Notifications</h2>
+                <button class="clear-btn" onclick="clearNotifications()">Clear All</button>
+            </div>
+
+            <div class="notifications" id="notificationsList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>Waiting for notifications...</h3>
+                    <p>Create a new order to see real-time updates!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SockJS & STOMP libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <script>
+        let stompClient = null;
+        let totalNotifications = 0;
+        let orderCount = 0;
+        let latestAmount = 0;
+
+        // Connect to WebSocket
+        function connect() {
+            const socket = new SockJS('http://localhost:8083/ws');
+            stompClient = Stomp.over(socket);
+            
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+                updateConnectionStatus(true);
+                
+                // Subscribe to notifications topic
+                stompClient.subscribe('/topic/notifications', function(notification) {
+                    const data = JSON.parse(notification.body);
+                    showNotification(data);
+                    updateStats(data);
+                });
+            }, function(error) {
+                console.error('Connection error:', error);
+                updateConnectionStatus(false);
+                // Reconnect after 5 seconds
+                setTimeout(connect, 5000);
+            });
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'status connected';
+                statusEl.innerHTML = '🟢 Connected';
+            } else {
+                statusEl.className = 'status disconnected';
+                statusEl.innerHTML = '🔴 Disconnected';
+            }
+        }
+
+        function showNotification(data) {
+            const notificationsList = document.getElementById('notificationsList');
+            
+            // Remove empty state if exists
+            const emptyState = notificationsList.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'notification new';
+            
+            const time = new Date(data.timestamp).toLocaleTimeString();
+            
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <div class="notification-title">${data.title}</div>
+                    <div class="notification-time">${time}</div>
+                </div>
+                <div class="notification-message">${data.message}</div>
+                <div class="notification-details">
+                    <div class="detail"><strong>Order ID:</strong> #${data.orderId}</div>
+                    <div class="detail"><strong>User ID:</strong> ${data.userId}</div>
+                    <div class="detail"><strong>Product:</strong> ${data.productName}</div>
+                    <div class="detail"><strong>Total:</strong> $${data.totalAmount.toFixed(2)}</div>
+                </div>
+            `;
+            
+            // Add to top of list
+            notificationsList.insertBefore(notification, notificationsList.firstChild);
+            
+            // Remove 'new' class after animation
+            setTimeout(() => {
+                notification.classList.remove('new');
+            }, 3000);
+            
+            // Play notification sound (optional)
+            playNotificationSound();
+        }
+
+        function updateStats(data) {
+            totalNotifications++;
+            document.getElementById('totalCount').textContent = totalNotifications;
+            
+            if (data.type === 'ORDER_CREATED') {
+                orderCount++;
+                document.getElementById('orderCount').textContent = orderCount;
+                
+                latestAmount = data.totalAmount;
+                document.getElementById('latestAmount').textContent = '$' + latestAmount.toFixed(2);
+            }
+        }
+
+        function clearNotifications() {
+            const notificationsList = document.getElementById('notificationsList');
+            notificationsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>Waiting for notifications...</h3>
+                    <p>Create a new order to see real-time updates!</p>
+                </div>
+            `;
+        }
+
+        function playNotificationSound() {
+            // Simple notification beep using Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // Connect on page load
+        connect();
+    </script>
+</body>
+</html>
