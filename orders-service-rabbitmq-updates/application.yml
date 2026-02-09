@@ -4,15 +4,14 @@ server:
 spring:
   application:
     name: orders-service
-
+  
   datasource:
     url: jdbc:h2:mem:ordersdb
     driver-class-name: org.h2.Driver
     username: sa
     password: 
-
+  
   jpa:
-    defer-datasource-initialization: true
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: update
@@ -20,7 +19,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-
+  
   h2:
     console:
       enabled: true
@@ -31,7 +30,6 @@ spring:
       circuitbreaker:
         enabled: true
   
-  # RabbitMQ Configuration
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: 5672
@@ -62,7 +60,7 @@ resilience4j:
         failure-rate-threshold: 50
         slow-call-rate-threshold: 100
         slow-call-duration-threshold: 3s
-
+  
   retry:
     instances:
       userService:
@@ -88,4 +86,3 @@ logging:
     com.ecommerce.orders: DEBUG
     org.springframework.web: INFO
     io.github.resilience4j: DEBUG
-    org.springframework.amqp: DEBUG

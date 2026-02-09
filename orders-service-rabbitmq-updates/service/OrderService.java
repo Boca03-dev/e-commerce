@@ -31,9 +31,6 @@ public class OrderService {
         this.eventPublisher = eventPublisher;
     }
 
-    /**
-     * Vraća sve porudžbine
-     */
     public List<OrderDTO> getAllOrders() {
         return orderRepository.findAll()
                 .stream()
@@ -41,22 +38,14 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Vraća porudžbinu po ID-u
-     */
     public OrderDTO getOrderById(Long id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
         return convertToDTO(order);
     }
 
-    /**
-     * Kreira novu porudžbinu
-     * Prvo proverava da li korisnik postoji (poziva users-service preko Feign-a)
-     */
     @Transactional
     public OrderDTO createOrder(OrderDTO orderDTO) {
-        // Poziva metodu sa Circuit Breaker zaštitom
         boolean userExists = checkIfUserExists(orderDTO.getUserId());
         
         if (!userExists) {
@@ -66,15 +55,11 @@ public class OrderService {
         Order order = convertToEntity(orderDTO);
         Order savedOrder = orderRepository.save(order);
         
-        // 🚀 NOVO: Publish OrderCreatedEvent na RabbitMQ
         publishOrderCreatedEvent(savedOrder);
         
         return convertToDTO(savedOrder);
     }
     
-    /**
-     * Publishes OrderCreatedEvent na RabbitMQ
-     */
     private void publishOrderCreatedEvent(Order order) {
         OrderCreatedEvent event = new OrderCreatedEvent(
             order.getId(),
@@ -90,9 +75,6 @@ public class OrderService {
         eventPublisher.publishOrderCreatedEvent(event);
     }
 
-    /**
-     * Proverava da li korisnik postoji - zaštićeno Circuit Breaker-om
-     */
     @CircuitBreaker(name = "userService", fallbackMethod = "checkIfUserExistsFallback")
     @Retry(name = "userService")
     private boolean checkIfUserExists(Long userId) {
@@ -100,16 +82,10 @@ public class OrderService {
         return userExistsResponse.get("exists");
     }
 
-    /**
-     * Fallback metoda - poziva se kada users-service ne radi
-     */
     private boolean checkIfUserExistsFallback(Long userId, Exception ex) {
         throw new RuntimeException("Users service is currently unavailable. Cannot validate user. Please try again later.");
     }
 
-    /**
-     * Ažurira postojeću porudžbinu
-     */
     @Transactional
     public OrderDTO updateOrder(Long id, OrderDTO orderDTO) {
         Order existingOrder = orderRepository.findById(id)
@@ -126,9 +102,6 @@ public class OrderService {
         return convertToDTO(updatedOrder);
     }
 
-    /**
-     * Briše porudžbinu po ID-u
-     */
     @Transactional
     public void deleteOrder(Long id) {
         if (!orderRepository.existsById(id)) {
@@ -137,22 +110,14 @@ public class OrderService {
         orderRepository.deleteById(id);
     }
 
-    /**
-     * AGREGACIONI ENDPOINT
-     * Vraća detalje porudžbine zajedno sa informacijama o korisniku
-     * Poziva users-service preko Feign-a da dobije podatke o korisniku
-     */
     @CircuitBreaker(name = "userService", fallbackMethod = "getOrderDetailsFallback")
     @Retry(name = "userService")
     public OrderDetailsDTO getOrderDetails(Long orderId) {
-        // Dohvata porudžbinu
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
 
-        // Dohvata korisnika preko Feign Client-a (poziv ka users-service)
         UserDTO user = userClient.getUserById(order.getUserId());
 
-        // Spaja podatke u OrderDetailsDTO
         OrderDetailsDTO details = new OrderDetailsDTO();
         details.setOrderId(order.getId());
         details.setProductName(order.getProductName());
@@ -168,9 +133,6 @@ public class OrderService {
         return details;
     }
 
-    /**
-     * Fallback metoda za getOrderDetails - poziva se kada users-service ne radi
-     */
     public OrderDetailsDTO getOrderDetailsFallback(Long orderId, Exception ex) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
@@ -190,7 +152,6 @@ public class OrderService {
         return details;
     }
 
-    // Konverzija Entity -> DTO
     private OrderDTO convertToDTO(Order order) {
         OrderDTO dto = new OrderDTO();
         dto.setId(order.getId());
@@ -202,7 +163,6 @@ public class OrderService {
         return dto;
     }
 
-    // Konverzija DTO -> Entity
     private Order convertToEntity(OrderDTO dto) {
         Order order = new Order();
         order.setUserId(dto.getUserId());

@@ -10,6 +10,8 @@ Projekat iz predmeta Projektovanje Distribuiranih Sistema - mikroservisna aplika
 - Maven
 - H2 Database
 - Eureka (Service Discovery)
+- Spring Cloud Config (Centralizovana konfiguracija)
+- RabbitMQ (Message Broker)
 - Spring Cloud Gateway
 - OpenFeign
 - Resilience4j (Circuit Breaker + Retry)
@@ -18,10 +20,12 @@ Projekat iz predmeta Projektovanje Distribuiranih Sistema - mikroservisna aplika
 
 Projekat se sastoji od sledećih servisa:
 
-1. **discovery-service** (port 8761) - Eureka Server za service discovery ✅
-2. **users-service** (port 8081) - Mikroservis za upravljanje korisnicima ✅
-3. **orders-service** (port 8082) - Mikroservis za upravljanje porudžbinama ✅
-4. **api-gateway** (port 8080) - API Gateway za rutiranje zahteva ✅
+1. **config-server** (port 8888) - Centralizovano upravljanje konfiguracijom iz `config-repo` direktorijuma ✅
+2. **discovery-service** (port 8761) - Eureka Server za service discovery ✅
+3. **api-gateway** (port 8080) - API Gateway za rutiranje zahteva ✅
+4. **users-service** (port 8081) - Mikroservis za upravljanje korisnicima ✅
+5. **orders-service** (port 8082) - Mikroservis za upravljanje porudžbinama (Producer poruka) ✅
+6. **notification-service** (port 8083) - Mikroservis za slanje notifikacija (Consumer poruka) ✅
 
 ```
                     ┌─────────────────┐
@@ -84,82 +88,27 @@ docker-compose ps
 docker-compose down
 ```
 
-### Korak po korak (VAŽAN REDOSLED!)
 
-#### 1. Discovery Service (Eureka Server)
+## 🚀 Ključne funkcionalnosti
 
-```bash
-cd discovery-service
-mvn clean install
-mvn spring-boot:run
-```
+### 1. Centralizovana Konfiguracija (Spring Cloud Config)
+- Svi mikroservisi povlače svoje `application.yml` postavke sa **Config Servera**.
+- Konfiguracioni fajlovi se nalaze u eksternom folderu `config-repo`.
+- Omogućen je dinamički refresh parametara bez restarta servisa.
 
-Eureka Dashboard: http://localhost:8761
+### 2. Event-Driven komunikacija (RabbitMQ)
+- **Asinhrona obrada**: Kada se kreira porudžbina u `orders-service`, šalje se `OrderCreatedEvent` u RabbitMQ exchange.
+- **Notification Service**: Sluša poruke sa queue-a i simulira slanje Email i SMS notifikacija.
+- **JSON Serializacija**: Korišćen `Jackson2JsonMessageConverter` sa podrškom za Java 8 `LocalDateTime`.
 
-#### 2. Users Service
+### 3. Service Discovery & Gateway
+- Svi servisi su registrovani na **Eureka** serveru.
+- **API Gateway** služi kao jedinstvena ulazna tačka (port 8080) i automatski rutira zahteve ka servisima koristeći Load Balancing.
 
-```bash
-cd users-service
-mvn clean install
-mvn spring-boot:run
-```
+### 4. Komunikacija i Otpornost (Feign & Resilience4j)
+- **Feign Client**: Direktna sinhrona komunikacija između `orders-service` i `users-service`.
+- **Circuit Breaker**: Ako `users-service` padne, sistem aktivira fallback mehanizam i sprečava kaskadni otkaz.
 
-Users API: http://localhost:8081/api/users
-
-#### 3. Orders Service
-
-```bash
-cd orders-service
-mvn clean install
-mvn spring-boot:run
-```
-
-Orders API: http://localhost:8082/api/orders
-
-#### 4. API Gateway
-
-```bash
-cd api-gateway
-mvn clean install
-mvn spring-boot:run
-```
-
-Gateway: http://localhost:8080
-
-**Provera:** Sva 3 servisa (users, orders, gateway) treba da budu vidljiva na Eureka Dashboard-u (http://localhost:8761).
-
-
-
-## 🎯 Ključne Funkcionalnosti
-
-### Discovery Service (Eureka)
-- Service registry - svi servisi se registruju ovde
-- Service discovery - servisi pronalaze jedni druge
-- Dashboard za monitoring
-
-### Users Service
-- **CRUD operacije** za korisnike (GET, POST, PUT, DELETE)
-- **Validacija podataka** (email format, obavezna polja)
-- **H2 in-memory baza** sa test podacima
-- **REST API endpoints:** `/api/users/**`
-
-### Orders Service
-- **CRUD operacije** za porudžbine (GET, POST, PUT, DELETE)
-- **Feign Client** - komunikacija sa users-service
-- **Resilience4j Circuit Breaker** - otpornost na greške
-- **Retry mehanizam** - automatsko ponovljavanje (3x)
-- **Agregacioni endpoint** `/api/orders/{id}/details` - spaja Order + User podatke
-- **Validacija userId** - proverava da li korisnik postoji pre kreiranja porudžbine
-- **Fallback metode** - kada users-service ne radi
-- **REST API endpoints:** `/api/orders/**`
-
-### API Gateway
-- **Centralna ulazna tačka** - svi zahtevi kroz port 8080
-- **Rutiranje zahteva** ka mikroservisima
-- **Load balancing** preko Eureka
-- **CORS konfiguracija**
-- **Logging filter** - loguje sve zahteve
-- **Actuator endpoints** za monitoring
 
 
 ## 🎓 Demonstracija Funkcionalnosti
@@ -196,11 +145,14 @@ Gateway: http://localhost:8080
 
 ```
 E-commerce/
-├── discovery-service/     # Eureka Server
-├── users-service/         # User management
-├── orders-service/        # Order management + Feign + Resilience4j
-├── api-gateway/          # API Gateway
-└── README.md
+├── config-server/        # Spring Cloud Config Server
+├── config-repo/          # Folder sa .yml konfiguracijama
+├── discovery-service/    # Eureka Server
+├── api-gateway/          # Spring Cloud Gateway
+├── users-service/        # User management
+├── orders-service/       # Order management (RabbitMQ Producer)
+├── notification-service/ # Notification handler (RabbitMQ Consumer)
+└── docker-compose.yml    # Docker orkestracija
 ```
 
 ## 🔧 Tehnički Detalji
