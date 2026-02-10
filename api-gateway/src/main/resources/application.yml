@@ -64,3 +64,14 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     com.ecommerce.gateway: DEBUG
+
+api:
+  security:
+    valid-keys:
+      - ecommerce-secret-key-123
+      - admin-key-456
+      - test-key-789
+    public-paths:
+      - /actuator/health
+      - /actuator/info
+      - /eureka
