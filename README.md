@@ -321,6 +321,8 @@ docker-compose stop users-service
 # Agregacioni endpoint
 curl -H "X-API-Key: ecommerce-secret-key-123" \
      http://localhost:8080/api/orders/1/details
+  
+```
 
 ---
 
