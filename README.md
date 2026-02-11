@@ -318,16 +318,9 @@ curl -H "X-API-Key: ecommerce-secret-key-123" \
 # Ugasi users-service
 docker-compose stop users-service
 
-# Pokušaj kreirati porudžbinu
-curl -X POST http://localhost:8080/api/orders \
-  -H "X-API-Key: ecommerce-secret-key-123" \
-  -H "Content-Type: application/json" \
-  -d '{"userId": 1, "productName": "Test", "quantity": 1, "price": 99}'
-# → Greška: "Users service is currently unavailable..."
-
-# Proveri Circuit Breaker status
-curl http://localhost:8082/actuator/health
-```
+# Agregacioni endpoint
+curl -H "X-API-Key: ecommerce-secret-key-123" \
+     http://localhost:8080/api/orders/1/details
 
 ---
 
